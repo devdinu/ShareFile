@@ -66,10 +66,12 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
 
     service = ServiceApi()
 
-    def _formatted_text_option(self, max_name_length, name, time):
+    def _formatted_text_option(self, name, time):
         return time + " : " + name
 
     def download_selected_file(self, chosen_index):
+        if chosen_index==-1:
+            return None
         interested_file = self.found_files[chosen_index]
         print("downloading file", interested_file.get('file_name'))
         file_content = self.service.download_file_content(interested_file.get('id'))
@@ -77,10 +79,8 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
 
     def search_files(self, file_name):
         self.found_files = self.service.search_files(file_name)
-        print("Matching files: ", len(self.found_files))
         if self.found_files:
-            max_name_length = max([len(f.get('file_name')) for f in self.found_files])
-            files_list = [self._formatted_text_option(max_name_length, f.get('file_name'), f.get('created_at')) for f in self.found_files]
+            files_list = [self._formatted_text_option(f.get('file_name'), f.get('created_at')) for f in self.found_files]
             self.window.show_quick_panel(files_list, self.download_selected_file)
 
     def get_pattern_for_search(self, prompt_message):
