@@ -21,3 +21,4 @@ This plugin lets you share the current file contents with someone, say tasks fil
 - Share Code via Gist
 - Encryption
 - Delete Files (some kind of authentication 's needed for this)
+- making it compatible with Python 2

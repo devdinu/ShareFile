@@ -1,0 +1,14 @@
+{
+   "schema_version": "3.0.0",
+   "name": "ShareFile",
+   "details": "https://github.com/dineshkumar-cse/ShareFile",
+   "author": "Dinesh Kumar",
+   "description": "lets you share current file, and others can just download by searching the name",
+   "home_page": "https://github.com/dineshkumar-cse/ShareFile",
+   "releases": [
+       {
+               "sublime_text": ">=3000",
+               "tags": true
+       }
+   ]
+}
