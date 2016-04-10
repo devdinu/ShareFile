@@ -15,9 +15,14 @@ class ServiceApi:
         return response
 
     def search_files(self, pattern):
+        if not pattern:
+            return None
         result = requests.get(self.base_url + 'search/'+ pattern)
         files = json.loads(result.text).get('files', [])
         return files
+
+    def download_file_content(self, file_object_id):
+        return requests.get(self.base_url + 'files/'+ file_object_id).text
 
 
 class Contstants:
@@ -61,16 +66,22 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
 
     service = ServiceApi()
 
+    def _formatted_text_option(self, max_name_length, name, time):
+        return time + " : " + name
+
     def download_selected_file(self, chosen_index):
-        print("downloading file", self.found_files[chosen_index]['file_name'])
+        interested_file = self.found_files[chosen_index]
+        print("downloading file", interested_file.get('file_name'))
+        file_content = self.service.download_file_content(interested_file.get('id'))
+        SublimeHelper(self.window.window_id).open_new_tab_with(file_content)
 
     def search_files(self, file_name):
-        if not file_name:
-            return
         self.found_files = self.service.search_files(file_name)
-        print("Matchig files: ", len(self.found_files))
+        print("Matching files: ", len(self.found_files))
         if self.found_files:
-            self.window.show_quick_panel([f.get('file_name') + " | " + f.get('created_at') for f in self.found_files], self.download_selected_file)
+            max_name_length = max([len(f.get('file_name')) for f in self.found_files])
+            files_list = [self._formatted_text_option(max_name_length, f.get('file_name'), f.get('created_at')) for f in self.found_files]
+            self.window.show_quick_panel(files_list, self.download_selected_file)
 
     def get_pattern_for_search(self, prompt_message):
         return self.window.show_input_panel(
@@ -78,3 +89,17 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
 
     def run(self, **kwargs):
         Thread(target=self.get_pattern_for_search, args=(Contstants.default_prompt_search_msg,)).start()
+
+
+
+class SublimeHelper(sublime.Window):
+
+    def open_new_tab_with(self, new_file_content):
+        new_view = self.new_file(self.window_id)
+        new_view.run_command('insert_text', {'content':new_file_content})
+
+
+class InsertTextCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, **kwargs):
+        self.view.insert(edit, 0, kwargs.get('content'))
