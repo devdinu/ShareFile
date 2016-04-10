@@ -8,7 +8,7 @@ from datetime import datetime
 
 class ServiceApi:
 
-    base_url = "http://localhost:8080/"
+    base_url = "http://sharefiles-liveasdev.rhcloud.com/"
 
     def upload_content(self, name, content):
         response = requests.post(self.base_url + 'upload/'+ name , data = bytes(content, Contstants.encode_format))
