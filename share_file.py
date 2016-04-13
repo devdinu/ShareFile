@@ -10,19 +10,22 @@ class ServiceApi:
 
     base_url = "http://sharefiles-liveasdev.rhcloud.com/"
 
-    def upload_content(self, name, content):
-        response = requests.post(self.base_url + 'upload/'+ name , data = bytes(content, Contstants.encode_format))
+    @classmethod
+    def upload_content(cls, name, content):
+        response = requests.post(cls.base_url + 'upload/'+ name , data = bytes(content, Contstants.encode_format))
         return response
 
-    def search_files(self, pattern):
+    @classmethod
+    def search_files(cls, pattern):
         if not pattern:
             return None
-        result = requests.get(self.base_url + 'search/'+ pattern)
+        result = requests.get(cls.base_url + 'search/'+ pattern)
         files = json.loads(result.text).get('files', [])
         return files
 
-    def download_file_content(self, file_object_id):
-        return requests.get(self.base_url + 'files/'+ file_object_id).text
+    @classmethod
+    def download_file_content(cls, file_object_id):
+        return requests.get(cls.base_url + 'files/'+ file_object_id).text
 
 
 class Contstants:
@@ -34,8 +37,6 @@ class Contstants:
 
 class ShareFileCommand(sublime_plugin.TextCommand):
 
-    service = ServiceApi()
-
     def valid(self, name):
         return name is not ""
 
@@ -43,7 +44,7 @@ class ShareFileCommand(sublime_plugin.TextCommand):
         while not self.valid(file_name):
             file_name = self.get_name_to_share(Contstants.default_prompt_share_msg)
         file_content = self.get_file_content()
-        self.service.upload_content(file_name, file_content)
+        ServiceApi.upload_content(file_name, file_content)
 
     def get_timestamp(self):
         return datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
@@ -64,8 +65,6 @@ class ShareFileCommand(sublime_plugin.TextCommand):
 
 class DownloadFileCommand(sublime_plugin.WindowCommand):
 
-    service = ServiceApi()
-
     def _formatted_text_option(self, name, time):
         return time + " : " + name
 
@@ -74,11 +73,11 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
             return None
         interested_file = self.found_files[chosen_index]
         print("downloading file", interested_file.get('file_name'))
-        file_content = self.service.download_file_content(interested_file.get('id'))
+        file_content = ServiceApi.download_file_content(interested_file.get('id'))
         SublimeHelper(self.window.window_id).open_new_tab_with(file_content)
 
     def search_files(self, file_name):
-        self.found_files = self.service.search_files(file_name)
+        self.found_files = ServiceApi.search_files(file_name)
         if self.found_files:
             files_list = [self._formatted_text_option(f.get('file_name'), f.get('created_at')) for f in self.found_files]
             self.window.show_quick_panel(files_list, self.download_selected_file)
