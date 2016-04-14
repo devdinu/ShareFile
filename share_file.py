@@ -90,15 +90,8 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
         Thread(target=self.get_pattern_for_search, args=(Contstants.default_prompt_search_msg,)).start()
 
 
-
 class SublimeHelper(sublime.Window):
 
     def open_new_tab_with(self, new_file_content):
         new_view = self.new_file(self.window_id)
-        new_view.run_command('insert_text', {'content':new_file_content})
-
-
-class InsertTextCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit, **kwargs):
-        self.view.insert(edit, 0, kwargs.get('content'))
+        new_view.run_command("insert_snippet", {"contents": new_file_content})

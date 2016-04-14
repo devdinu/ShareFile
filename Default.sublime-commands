@@ -1,0 +1,4 @@
+[
+    { "caption": "ShareFile: Share Current File", "command": "share_file" },
+    { "caption": "ShareFile: Search and Download A File", "command": "download_file" }
+]
