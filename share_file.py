@@ -3,24 +3,58 @@ import sublime
 import sublime_plugin
 import requests
 import json
-from threading import Thread
 from datetime import datetime
 
-class ServiceApi:
+class Constants:
 
-    base_url = "http://sharefiles-liveasdev.rhcloud.com/"
+    default_prompt_share_msg = "Enter File Name to Share:"
+    default_prompt_search_msg = "Enter File Name to Search:"
+    re_enter_filename = "ReEnter File Name:"
+    ST3 = int(sublime.version()) > 3000
+    encode_format = "utf-8"
+    timeout = 100
+    SUCCESS_STATUS_CODE = 200
+
+
+class Util:
+    """Utility class to Handle operations on ST2 and ST3 accordingly"""
+
+    @staticmethod
+    def run_in_background(function_to_run, *function_args):
+        if Constants.ST3:
+            from threading import Thread
+            Thread(target=function_to_run, args=function_args).start()
+        else:
+            from functools import partial
+            sublime.set_timeout(partial(function_to_run, *function_args), Constants.timeout)
+
+    @staticmethod
+    def encode_data(data):
+        if Constants.ST3:
+            return bytes(data, Constants.encode_format)
+        return data.encode(Constants.encode_format, 'replace')
+
+class ServiceApi:
+    base_url = "http://localhost:8080/" #"http://sharefiles-liveasdev.rhcloud.com/"
+
+    @classmethod
+    def _is_success(cls, response):
+        return response.status_code==Constants.SUCCESS_STATUS_CODE
 
     @classmethod
     def upload_content(cls, name, content):
-        response = requests.post(cls.base_url + 'upload/'+ name , data = bytes(content, Contstants.encode_format))
-        return response
+        encoded_data = Util.encode_data(content)
+        response = requests.post(cls.base_url + 'upload/'+ name , encoded_data)
+        return cls._is_success(response)
 
     @classmethod
     def search_files(cls, pattern):
+        files = []
         if not pattern:
             return None
         result = requests.get(cls.base_url + 'search/'+ pattern)
-        files = json.loads(result.text).get('files', [])
+        if cls._is_success(result):
+            files = json.loads(result.text).get('files', [])
         return files
 
     @classmethod
@@ -28,39 +62,32 @@ class ServiceApi:
         return requests.get(cls.base_url + 'files/'+ file_object_id).text
 
 
-class Contstants:
-    default_prompt_share_msg = "Enter File Name to Share:"
-    default_prompt_search_msg = "Enter File Name to Search:"
-    re_enter_filename = "ReEnter File Name:"
-    encode_format = "utf-8"
-
 
 class ShareFileCommand(sublime_plugin.TextCommand):
 
-    def valid(self, name):
+    def _valid(self, name):
         return name is not ""
 
     def share_file(self, file_name):
-        while not self.valid(file_name):
-            file_name = self.get_name_to_share(Contstants.default_prompt_share_msg)
+        while not self._valid(file_name):
+            file_name = self.get_name_to_share(Constants.default_prompt_share_msg)
         file_content = self.get_file_content()
-        ServiceApi.upload_content(file_name, file_content)
+        Util.run_in_background(ServiceApi.upload_content, file_name, file_content)
 
-    def get_timestamp(self):
+    def _get_timestamp(self):
         return datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
     def get_name_to_share(self, prompt_message):
-        timestamp = self.get_timestamp()
+        timestamp = self._get_timestamp()
         return self.view.window().show_input_panel(
             prompt_message, "File-Name|" + timestamp, self.share_file, None, None)
 
     def get_file_content(self):
-        region = sublime.Region(0, self.view.size())
-        content = self.view.substr(region)
-        return content
+        entire_region = sublime.Region(0, self.view.size())
+        return self.view.substr(entire_region)
 
     def run(self, edit, **kwargs):
-        Thread(target=self.get_name_to_share, args=(Contstants.default_prompt_share_msg,)).start()
+        self.get_name_to_share(Constants.default_prompt_share_msg)
 
 
 class DownloadFileCommand(sublime_plugin.WindowCommand):
@@ -68,13 +95,16 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
     def _formatted_text_option(self, name, time):
         return time + " : " + name
 
+    def _download_and_show_options(self, file_name_object_id):
+        file_content = ServiceApi.download_file_content(file_name_object_id)
+        self.window.new_file().run_command("insert_snippet", {"contents": file_content})
+
     def download_selected_file(self, chosen_index):
         if chosen_index==-1:
             return None
         interested_file = self.found_files[chosen_index]
         print("downloading file", interested_file.get('file_name'))
-        file_content = ServiceApi.download_file_content(interested_file.get('id'))
-        SublimeHelper(self.window.window_id).open_new_tab_with(file_content)
+        Util.run_in_background(self._download_and_show_options, interested_file.get('id'))
 
     def search_files(self, file_name):
         self.found_files = ServiceApi.search_files(file_name)
@@ -87,11 +117,4 @@ class DownloadFileCommand(sublime_plugin.WindowCommand):
             prompt_message, "File-Name", self.search_files, None, None)
 
     def run(self, **kwargs):
-        Thread(target=self.get_pattern_for_search, args=(Contstants.default_prompt_search_msg,)).start()
-
-
-class SublimeHelper(sublime.Window):
-
-    def open_new_tab_with(self, new_file_content):
-        new_view = self.new_file(self.window_id)
-        new_view.run_command("insert_snippet", {"contents": new_file_content})
+        self.get_pattern_for_search(Constants.default_prompt_search_msg)
