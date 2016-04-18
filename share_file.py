@@ -26,7 +26,7 @@ class Util:
             Thread(target=function_to_run, args=function_args).start()
         else:
             from functools import partial
-            sublime.set_timeout(partial(function_to_run, *function_args), Constants.timeout)
+            sublime.set_async_timeout(partial(function_to_run, *function_args), Constants.timeout)
 
     @staticmethod
     def encode_data(data):
@@ -35,7 +35,7 @@ class Util:
         return data.encode(Constants.encode_format, 'replace')
 
 class ServiceApi:
-    base_url = "http://localhost:8080/" #"http://sharefiles-liveasdev.rhcloud.com/"
+    base_url = "http://sharefiles-liveasdev.rhcloud.com/"
 
     @classmethod
     def _is_success(cls, response):
