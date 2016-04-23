@@ -1,4 +1,5 @@
 [
     { "keys": ["ctrl+alt+u"], "command": "share_file" },
-    { "keys": ["ctrl+alt+d"], "command": "download_file" }
+    { "keys": ["ctrl+alt+d"], "command": "download_file" },
+    { "keys": ["ctrl+alt+r"], "command": "remove_file" }
 ]

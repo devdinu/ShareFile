@@ -38,3 +38,13 @@ class Util:
         if ST3:
             return bytes(data, Constants.encode_format)
         return data.encode(Constants.encode_format, 'replace')
+
+    @staticmethod
+    def formatted_text_option(name, time):
+        return time + " : " + name
+
+    @staticmethod
+    def display_available_files(window, files, selection_callback):
+        if files:
+            formatted_file_names = [Util.formatted_text_option(f.get('file_name'), f.get('created_at')) for f in files]
+            window.show_quick_panel(formatted_file_names, selection_callback)

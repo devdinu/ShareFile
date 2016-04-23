@@ -38,5 +38,3 @@ class ShareFileCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, **kwargs):
         self.get_name_to_share(Constants.default_prompt_share_msg)
-
-

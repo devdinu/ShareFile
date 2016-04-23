@@ -1,6 +1,6 @@
 
 class Constants:
-    default_file_pattern = ".*"
+    default_all_files_pattern = ".*"
     msg_for_file_pattern_input = "Enter File Pattern to Search"
     settings_file = "ShareFiles.sublime-settings"
     default_prompt_share_msg = "Enter File Name to Share:"
