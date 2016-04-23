@@ -14,25 +14,22 @@ else:
 
 
 class ServiceApi:
-    # base_url = "http://sharefiles-liveasdev.rhcloud.com/"
-    base_url = "http://localhost:8080/"
+    base_url = "http://sharefiles-liveasdev.rhcloud.com/"
     upload_content_url = base_url + "users/{user_id}/files/{file_name}"
     get_user_id_url = base_url + "users/create"
+    search_files_url = base_url + "users/{user_id_input}/files/search?pattern={file_pattern}"
 
     @classmethod
-    def _is_success(cls, response):
-        return response.status_code == Constants.SUCCESS_STATUS_CODE
+    def _is_success(cls, response, status_code=Constants.SUCCESS_STATUS_CODE):
+        return response.status_code == status_code
 
     @classmethod
     def _get_uid(cls):
-        settings = sublime.load_settings(Constants.settings_file)
-        user_id = settings.get("user_id")
-        print("settings, ", user_id, dir(settings))
+        user_id = Util.get_user_id()
         if not user_id:
             print("welcome, creating id for you.")
             user_id = requests.get(cls.get_user_id_url).text
-            settings.set("user_id", user_id)
-            sublime.save_settings(Constants.settings_file)
+            Util.set_user_id(user_id)
         return user_id
 
     @classmethod
@@ -40,14 +37,14 @@ class ServiceApi:
         encoded_data = Util.encode_data(content)
         url = cls.upload_content_url.format(user_id=cls._get_uid(), file_name=name)
         response = requests.post(url, encoded_data)
-        return cls._is_success(response)
+        return cls._is_success(response, 201)
 
     @classmethod
-    def search_files(cls, pattern):
+    def search_files(cls, user_key, pattern):
         files = []
         if not pattern:
             return None
-        result = requests.get(cls.base_url + 'search/' + pattern)
+        result = requests.get(cls.search_files_url.format(user_id_input=user_key, file_pattern=pattern))
         if cls._is_success(result):
             files = json.loads(result.text).get('files', [])
         return files
