@@ -1,3 +1,5 @@
 *.pyc
 .DS_Store
 .python-version
+.tags
+.idea/
