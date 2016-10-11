@@ -22,4 +22,5 @@ class RemoveFileCommand(sublime_plugin.WindowCommand):
 
     def run(self, **kwargs):
         self.user_files = ServiceApi.search_files(Util.get_user_id(), Constants.default_all_files_pattern)
+        print('files found for deletion: ', len(self.user_files))
         Util.display_available_files(self.window, self.user_files, self.delete_file)

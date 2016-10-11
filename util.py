@@ -21,7 +21,7 @@ class Util:
 
     @classmethod
     def get_user_id(cls):
-        user_id = cls.settings.get("user_id") if cls.settings else ""
+        user_id = cls.settings.get('user_id')
         return user_id if user_id else ""
 
     @staticmethod
